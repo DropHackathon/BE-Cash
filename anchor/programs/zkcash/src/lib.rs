@@ -248,6 +248,21 @@ pub mod zkcash {
         MerkleTree::append::<Poseidon>(proof.output_commitments[0], tree_account)?;
         MerkleTree::append::<Poseidon>(proof.output_commitments[1], tree_account)?;
 
+        let second_index = next_index_to_insert.checked_add(1)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
+
+        emit!(CommitmentData {
+            index: next_index_to_insert,
+            commitment: proof.output_commitments[0],
+            encrypted_output: encrypted_output1.to_vec(),
+        });
+
+        emit!(CommitmentData {
+            index: second_index,
+            commitment: proof.output_commitments[1],
+            encrypted_output: encrypted_output2.to_vec(),
+        });
+
         ctx.accounts.commitment0.commitment = proof.output_commitments[0];
         ctx.accounts.commitment0.encrypted_output = encrypted_output1;
         ctx.accounts.commitment0.index = next_index_to_insert;
@@ -255,12 +270,18 @@ pub mod zkcash {
         
         ctx.accounts.commitment1.commitment = proof.output_commitments[1];
         ctx.accounts.commitment1.encrypted_output = encrypted_output2;
-        ctx.accounts.commitment1.index = next_index_to_insert.checked_add(1)
-            .ok_or(ErrorCode::ArithmeticOverflow)?;
+        ctx.accounts.commitment1.index = second_index;
         ctx.accounts.commitment1.bump = ctx.bumps.commitment1;
         
         Ok(())
     }
+}
+
+#[event]
+pub struct CommitmentData {
+    pub index: u64,
+    pub commitment: [u8; 32],
+    pub encrypted_output: Vec<u8>,
 }
 
 // all public inputs needs to be in big endian format

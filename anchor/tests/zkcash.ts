@@ -1,9 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import { Program, EventParser, BorshCoder } from "@coral-xyz/anchor";
 import { Zkcash } from "../target/types/zkcash";
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { expect } from "chai";
-import { DEFAULT_HEIGHT, DEPOSIT_FEE_RATE, FEE_RECIPIENT_ACCOUNT, FIELD_SIZE, ROOT_HISTORY_SIZE, WITHDRAW_FEE_RATE, ZERO_BYTES } from "./lib/constants";
+import { getExtDataHash } from "./lib/utils";
+import { DEFAULT_HEIGHT, FIELD_SIZE, ROOT_HISTORY_SIZE, ZERO_BYTES, DEPOSIT_FEE_RATE, WITHDRAW_FEE_RATE, FEE_RECIPIENT_ACCOUNT } from "./lib/constants";
 
 import * as crypto from "crypto";
 import * as path from 'path';
@@ -42,7 +43,6 @@ export function bnToBytes(bn: anchor.BN): number[] {
 
 import { MerkleTree } from "./lib/merkle_tree";
 import { createGlobalTestALT, getTestProtocolAddresses, createVersionedTransactionWithALT, sendAndConfirmVersionedTransaction } from "./lib/test_alt";
-import { getExtDataHash } from "./lib/utils";
 
 // Find nullifier PDAs for the given proof
 function findNullifierPDAs(program: anchor.Program<any>, proof: any) {
@@ -887,6 +887,53 @@ describe("zkcash", () => {
     
     expect(txSig).to.be.a('string');
 
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
+
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
     const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
@@ -1355,6 +1402,53 @@ describe("zkcash", () => {
     );
     
     expect(txSig).to.be.a('string');
+
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
 
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
@@ -1831,6 +1925,53 @@ describe("zkcash", () => {
     
     expect(txSig).to.be.a('string');
 
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
+
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
     const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
@@ -2285,6 +2426,53 @@ describe("zkcash", () => {
     
     expect(txSig).to.be.a('string');
 
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
+
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
     const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
@@ -2729,6 +2917,53 @@ describe("zkcash", () => {
     
     expect(txSig).to.be.a('string');
 
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
+
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
     const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
@@ -3124,6 +3359,53 @@ describe("zkcash", () => {
     );
     
     expect(txSig).to.be.a('string');
+
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
 
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
@@ -3569,6 +3851,53 @@ describe("zkcash", () => {
     );
     
     expect(txSig).to.be.a('string');
+
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
 
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
@@ -4021,6 +4350,53 @@ describe("zkcash", () => {
     
     expect(txSig).to.be.a('string');
 
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
+
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
     const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
@@ -4467,6 +4843,53 @@ describe("zkcash", () => {
     );
     
     expect(txSig).to.be.a('string');
+
+    // Check commitment logs for transaction (only if transaction succeeded)
+    const transaction = await provider.connection.getTransaction(txSig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0
+    });
+
+    if (transaction && transaction.meta && transaction.meta.logMessages) {
+      const logs = transaction.meta.logMessages;
+      // Parse commitment events using Anchor's EventParser
+      const eventParser = new EventParser(program.programId, new BorshCoder(program.idl));
+      const events = Array.from(eventParser.parseLogs(logs));
+      const commitmentEvents = events.filter(event => event.name === "commitmentData");
+      
+      // All transactions must have exactly 2 commitment events
+      expect(commitmentEvents).to.have.length(2);
+
+      // Verify first commitment event
+      const firstEvent = commitmentEvents[0];
+      expect(firstEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(firstEvent.data.commitment).to.be.an('array');
+      expect(firstEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(firstEvent.data.commitment).to.have.length(32);
+      
+      // Verify second commitment event
+      const secondEvent = commitmentEvents[1];
+      expect(secondEvent.data.index).to.be.an.instanceOf(anchor.BN);
+      expect(secondEvent.data.commitment).to.be.an('array');
+      expect(secondEvent.data.encryptedOutput).to.be.instanceOf(Buffer);
+      expect(secondEvent.data.commitment).to.have.length(32);
+      
+      // Verify second index is first index + 1
+      expect(secondEvent.data.index.toNumber()).to.equal(firstEvent.data.index.toNumber() + 1);
+
+      // Verify the event commitments match the actual output commitments
+      const firstEventCommitment = Buffer.from(firstEvent.data.commitment);
+      const secondEventCommitment = Buffer.from(secondEvent.data.commitment);
+      
+      // Compare against proof output commitments
+      const proofOutputCommitments = proofToSubmit.outputCommitments;
+      expect(firstEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[0]).toString('hex'));
+      expect(secondEventCommitment.toString('hex')).to.deep.equal(Buffer.from(proofOutputCommitments[1]).toString('hex'));
+
+      // Verify the event encrypted outputs match the actual encrypted outputs
+      expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
+      expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
+    }
 
     // Verify commitment PDAs have correct data
     const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
