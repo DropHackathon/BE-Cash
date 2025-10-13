@@ -28,54 +28,10 @@ The implementation uses zero-knowledge proofs to ensure that withdrawals cannot 
 - npm or yarn
 - Circom v2.2.2 https://docs.circom.io/getting-started/installation/#installing-dependencies
 
-## Installation
+## SDK
+If you want to integrate Privacy Cash into your project, use the [Privacy Cash SDK](https://github.com/Privacy-Cash/privacy-cash-sdk) here.
 
-### ZK Circuits
-1. Navigate to the script directory:
-   ```bash
-   cd scripts
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Generate circuits:
-   ```bash
-   ./buildCircuit_prod_solana.sh 2
-   ```
-
-### Trusted Setup Ceremony (PRODUCTION REQUIRED)
-   ```bash
-   # Coordinator starts
-   ./trusted_setup_ceremony.sh 2 setup
-   
-   # Each participant contributes (on separate machines)
-   ./trusted_setup_ceremony.sh 2 contribute 1
-   ./trusted_setup_ceremony.sh 2 contribute 2  
-   ./trusted_setup_ceremony.sh 2 contribute 3
-   ./trusted_setup_ceremony.sh 2 contribute 4
-   
-   # Coordinator finalizes
-   ./trusted_setup_ceremony.sh 2 finalize
-   ```
-
-The ceremony ensures that as long as one participant deletes their secrets, the system remains secure.
-4. Generate verifying keys
-   ```bash
-   cd artifacts/circuits
-   npx snarkjs zkey export verificationkey transaction2.zkey verifyingkey2.json
-   ```
-### ZK Proofs
-1. Navigate to the script directory:
-   ```bash
-   cd scripts
-   ```
-2. Generate a sample proof (with a first deposit proof, and another withdrawal proof):
-   ```bash
-   ts-node sample_proof_generator.ts
-   ```
-
-### Anchor Program
+## Anchor Program
 1. Navigate to the program directory:
    ```bash
    cd anchor
