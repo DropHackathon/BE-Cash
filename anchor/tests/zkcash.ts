@@ -359,8 +359,6 @@ describe("zkcash", () => {
     const depositTestProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -500,8 +498,6 @@ describe("zkcash", () => {
     const firstTestProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -650,8 +646,6 @@ describe("zkcash", () => {
     const secondTestProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -831,8 +825,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -933,32 +925,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -1135,32 +1101,6 @@ describe("zkcash", () => {
     );
     
     expect(withdrawTxSig).to.be.a('string');
-
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
 
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -1347,8 +1287,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
 
@@ -1449,32 +1387,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -1654,32 +1566,6 @@ describe("zkcash", () => {
     );
     
     expect(withdrawTxSig).to.be.a('string');
-
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
 
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -1869,8 +1755,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
 
@@ -1971,32 +1855,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -2177,32 +2035,6 @@ describe("zkcash", () => {
     
     expect(withdrawTxSig).to.be.a('string');
 
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
-
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
     const finalPdaFeeRecipientBalance = await provider.connection.getBalance(pdaFeeRecipient);
@@ -2370,8 +2202,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -2472,32 +2302,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -2674,32 +2478,6 @@ describe("zkcash", () => {
     
     expect(withdrawTxSig).to.be.a('string');
 
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
-
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
     const finalFeeRecipientBalance = await provider.connection.getBalance(FEE_RECIPIENT_ACCOUNT);
@@ -2860,8 +2638,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     testProtocolAddresses.push(attacker.publicKey); // Add attacker to the lookup table
@@ -2963,32 +2739,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -3304,8 +3054,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -3406,32 +3154,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -3608,32 +3330,6 @@ describe("zkcash", () => {
     
     expect(withdrawTxSig).to.be.a('string');
 
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
-
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
     const finalFeeRecipientBalance = await provider.connection.getBalance(FEE_RECIPIENT_ACCOUNT);
@@ -3796,8 +3492,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -3898,32 +3592,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -4100,32 +3768,6 @@ describe("zkcash", () => {
     
     expect(withdrawTxSig).to.be.a('string');
 
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
-
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
     const finalFeeRecipientBalance = await provider.connection.getBalance(FEE_RECIPIENT_ACCOUNT);
@@ -4288,15 +3930,7 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
-      nullifier0PDA,
-      nullifier1PDA,
-      commitment0PDA,
-      commitment1PDA,
-      recipient.publicKey,
-      FEE_RECIPIENT_ACCOUNT,
-      randomUser.publicKey
+      FEE_RECIPIENT_ACCOUNT
     );
     
     const lookupTableAddress = await createGlobalTestALT(provider.connection, authority, testProtocolAddresses);
@@ -4396,32 +4030,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -4598,32 +4206,6 @@ describe("zkcash", () => {
     
     expect(withdrawTxSig).to.be.a('string');
 
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
-
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
     const finalFeeRecipientBalance = await provider.connection.getBalance(FEE_RECIPIENT_ACCOUNT);
@@ -4788,8 +4370,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -4890,32 +4470,6 @@ describe("zkcash", () => {
       expect(firstEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput1);
       expect(secondEvent.data.encryptedOutput).to.deep.equal(extData.encryptedOutput2);
     }
-
-    // Verify commitment PDAs have correct data
-    const commitment0Account = await provider.connection.getAccountInfo(commitment0PDA);
-    const commitment1Account = await provider.connection.getAccountInfo(commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(commitment0Account).to.not.be.null;
-    expect(commitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const commitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment0Account.data
-    );
-    const commitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      commitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(commitment0Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(commitment1Data.commitment).equals(Buffer.from(proofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(commitment0Data.encryptedOutput).equals(extData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(commitment1Data.encryptedOutput).equals(extData.encryptedOutput2)).to.be.true;
 
     // Get balances after transaction
     const treeTokenAccountBalanceAfter = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -5091,32 +4645,6 @@ describe("zkcash", () => {
     );
     
     expect(withdrawTxSig).to.be.a('string');
-
-    // Verify withdrawal commitment PDAs have correct data
-    const withdrawCommitment0Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment0PDA);
-    const withdrawCommitment1Account = await provider.connection.getAccountInfo(withdrawCommitments.commitment1PDA);
-    
-    // Check that the commitment accounts exist
-    expect(withdrawCommitment0Account).to.not.be.null;
-    expect(withdrawCommitment1Account).to.not.be.null;
-    
-    // Deserialize the commitment accounts
-    const withdrawCommitment0Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment0Account.data
-    );
-    const withdrawCommitment1Data = program.coder.accounts.decode(
-      'commitmentAccount',
-      withdrawCommitment1Account.data
-    );
-    
-    // Verify the commitment values match
-    expect(Buffer.from(withdrawCommitment0Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[0]))).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.commitment).equals(Buffer.from(withdrawProofToSubmit.outputCommitments[1]))).to.be.true;
-    
-    // Verify the encrypted outputs match
-    expect(Buffer.from(withdrawCommitment0Data.encryptedOutput).equals(withdrawExtData.encryptedOutput1)).to.be.true;
-    expect(Buffer.from(withdrawCommitment1Data.encryptedOutput).equals(withdrawExtData.encryptedOutput2)).to.be.true;
 
     // Get final balances after both transactions
     const finalTreeTokenBalance = await provider.connection.getBalance(treeTokenAccountPDA);
@@ -5685,8 +5213,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -5748,8 +5274,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -5908,8 +5432,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -6062,8 +5584,6 @@ describe("zkcash", () => {
     const depositTestProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -6203,8 +5723,6 @@ describe("zkcash", () => {
     const withdrawTestProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -6360,8 +5878,6 @@ describe("zkcash", () => {
     const depositTestProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -6528,8 +6044,6 @@ describe("zkcash", () => {
       const withdrawTestProtocolAddresses = getTestProtocolAddresses(
         program.programId,
         authority.publicKey,
-        treeAccountPDA,
-        treeTokenAccountPDA,
         FEE_RECIPIENT_ACCOUNT
       );
       
@@ -6693,8 +6207,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
@@ -7104,8 +6616,6 @@ describe("zkcash", () => {
     const testProtocolAddresses = getTestProtocolAddresses(
       program.programId,
       authority.publicKey,
-      treeAccountPDA,
-      treeTokenAccountPDA,
       FEE_RECIPIENT_ACCOUNT
     );
     
